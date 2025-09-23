@@ -6,9 +6,9 @@
  * 
  * Usage:
  * - Manual run: node scripts/fetch-saudi-news.js
- * - Cron job: 0 */6 * * * cd /path/to/project && node scripts/fetch-saudi-news.js
- *   (runs every 6 hours)
- */
+//  * - Cron job: 0 */6 * * * cd /path/to/project && node scripts/fetch-saudi-news.js
+//  *   (runs every 6 hours)
+//  */
 
 const https = require('https')
 const http = require('http')
