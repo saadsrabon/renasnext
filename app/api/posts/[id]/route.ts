@@ -30,7 +30,7 @@ export async function GET(
     
     return NextResponse.json({
       success: true,
-      post: { ...post, views: (post.views || 0) + 1 }
+      post: { ...post, views: ((post as any).views || 0) + 1 }
     })
   } catch (error) {
     console.error('Error fetching post:', error)

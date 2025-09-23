@@ -19,7 +19,7 @@ interface TopicDetailPageProps {
 
 export default function TopicDetailPage({ params }: TopicDetailPageProps) {
   const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
+  const { user, token, loading: authLoading } = useAuth()
   const [topic, setTopic] = useState<ForumTopic | null>(null)
   const [comments, setComments] = useState<ForumComment[]>([])
   const [loading, setLoading] = useState(true)
@@ -94,10 +94,9 @@ export default function TopicDetailPage({ params }: TopicDetailPageProps) {
       const response = await createForumComment({
         topic_id: topicId,
         content: newComment,
-        author_id: isAnonymous ? undefined : user?.id,
-        author_name: isAnonymous ? commentAuthor : (user?.display_name || user?.username || ''),
-        is_anonymous: isAnonymous
-      })
+        author_name: isAnonymous ? commentAuthor : (user?.name || ''),
+        parent_id: undefined
+      }, token || undefined)
 
       if (response.success && response.data) {
         setComments(prev => [...prev, response.data!])
@@ -189,15 +188,15 @@ export default function TopicDetailPage({ params }: TopicDetailPageProps) {
                 <div className="flex items-center gap-4 text-sm text-renas-brown-600 dark:text-gray-400 mb-4">
                   <span className="flex items-center gap-1">
                     <Users className="h-4 w-4" />
-                    {topic.author_name}
+                    {topic.author.name}
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="h-4 w-4" />
-                    {formatForumDate(topic.created_at)}
+                    {formatForumDate(topic.createdAt)}
                   </span>
                   <span className="flex items-center gap-1">
                     <Reply className="h-4 w-4" />
-                    {topic.reply_count} replies
+                    {topic.replies} replies
                   </span>
                 </div>
               </div>
@@ -237,21 +236,21 @@ export default function TopicDetailPage({ params }: TopicDetailPageProps) {
           ) : (
             <div className="space-y-4">
               {comments.map((comment) => (
-                <Card key={comment.id} className="border-renas-brown-200 dark:border-gray-700">
+                <Card key={comment._id} className="border-renas-brown-200 dark:border-gray-700">
                   <CardContent className="pt-4">
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-renas-brown-800 dark:text-white">
-                          {comment.author_name}
+                          {comment.author?.name || comment.authorName || 'Anonymous'}
                         </span>
-                        {comment.is_anonymous && (
+                        {!comment.author && comment.authorName && (
                           <span className="text-xs bg-renas-brown-100 dark:bg-renas-brown-800 text-renas-brown-600 dark:text-renas-brown-300 px-2 py-1 rounded">
                             Anonymous
                           </span>
                         )}
                       </div>
                       <span className="text-sm text-renas-brown-500 dark:text-gray-400">
-                        {formatForumDate(comment.created_at)}
+                        {formatForumDate(comment.createdAt)}
                       </span>
                     </div>
                     <p className="text-renas-brown-700 dark:text-gray-300 whitespace-pre-wrap mb-3">
@@ -263,7 +262,7 @@ export default function TopicDetailPage({ params }: TopicDetailPageProps) {
                         size="sm"
                         onClick={() => {
                           setShowCommentForm(true)
-                          setNewComment(`@${comment.author_name} `)
+                          setNewComment(`@${comment.author?.name || comment.authorName || 'Anonymous'} `)
                         }}
                         className="flex items-center gap-1 text-xs"
                       >

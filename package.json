@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "seed:admin": "node scripts/seed-admin.js",
-    "seed:posts": "node scripts/seed-posts.js"
+    "seed:posts": "node scripts/seed-posts.js",
+    "fetch:news": "node scripts/fetch-saudi-news.js"
   },
   "dependencies": {
     "@formatjs/intl": "^3.1.6",

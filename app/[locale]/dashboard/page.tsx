@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/lib/auth-context"
-import { processWordPressPosts } from "@/lib/wordpress-api"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -26,24 +25,23 @@ import { useRouter, useParams } from "next/navigation"
 export const dynamic = 'force-dynamic'
 
 interface Post {
-  id: number
+  _id: string
   title: string
   content: string
   excerpt: string
-  status: 'draft' | 'publish' | 'pending'
-  date: string
-  modified: string
-  featured_media?: number
-  categories: number[]
+  status: 'draft' | 'published' | 'pending'
+  createdAt: string
+  updatedAt: string
+  featuredImage?: string
+  category: string
+  tags: string[]
+  author: {
+    _id: string
+    name: string
+    email: string
+  }
 }
 
-// Helper function to safely extract WordPress rendered content
-const safeExtractContent = (field: any): string => {
-  if (!field) return ''
-  if (typeof field === 'object' && field.rendered) return field.rendered
-  if (typeof field === 'string') return field
-  return ''
-}
 
 export default function Dashboard() {
   const t = useTranslations("dashboard")
@@ -79,14 +77,7 @@ export default function Dashboard() {
       if (response.ok) {
         const data = await response.json()
         if (data.success && data.posts) {
-          // Process WordPress API response to extract rendered content safely
-          const processedPosts = data.posts.map((post: any) => ({
-            ...post,
-            title: safeExtractContent(post.title) || 'Untitled Post',
-            content: safeExtractContent(post.content),
-            excerpt: safeExtractContent(post.excerpt),
-          }))
-          setPosts(processedPosts)
+          setPosts(data.posts)
         } else {
           console.error('Invalid response format:', data)
           setPosts([])
@@ -103,7 +94,7 @@ export default function Dashboard() {
     }
   }
 
-  const handleDeletePost = async (postId: number) => {
+  const handleDeletePost = async (postId: string) => {
     if (!confirm("Are you sure you want to delete this post?")) return
     
     try {
@@ -115,7 +106,7 @@ export default function Dashboard() {
       })
 
       if (response.ok) {
-        setPosts(posts.filter(post => post.id !== postId))
+        setPosts(posts.filter(post => post._id !== postId))
       }
     } catch (error) {
       console.error("Error deleting post:", error)
@@ -125,7 +116,7 @@ export default function Dashboard() {
   const getStatusBadge = (status: string) => {
     const baseClasses = "px-2 py-1 text-xs font-medium rounded-full"
     switch (status) {
-      case "publish":
+      case "published":
         return `${baseClasses} bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200`
       case "draft":
         return `${baseClasses} bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200`
@@ -185,7 +176,7 @@ export default function Dashboard() {
               Dashboard
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Welcome back, {user.display_name || user.username}!
+              Welcome back, {user.name}!
             </p>
           </div>
           <Link href={`/${locale}/dashboard/create`}>
@@ -219,7 +210,7 @@ export default function Dashboard() {
                   Published
                 </p>
                 <p className="text-2xl font-bold text-green-600">
-                  {posts.filter(p => p.status === 'publish').length}
+                  {posts.filter(p => p.status === 'published').length}
                 </p>
               </div>
               <Eye className="h-8 w-8 text-green-500" />
@@ -296,7 +287,7 @@ export default function Dashboard() {
                   <div className="space-y-4">
                     {posts.map((post) => (
                       <div
-                        key={post.id}
+                        key={post._id}
                         className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                       >
                         <div className="flex items-start justify-between">
@@ -315,17 +306,17 @@ export default function Dashboard() {
                             <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                               <div className="flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
-                                <span>Created: {formatDate(post.date)}</span>
+                                <span>Created: {formatDate(post.createdAt)}</span>
                               </div>
-                              {post.modified !== post.date && (
+                              {post.updatedAt !== post.createdAt && (
                                 <div className="flex items-center gap-1">
                                   <Calendar className="h-3 w-3" />
-                                  <span>Updated: {formatDate(post.modified)}</span>
+                                  <span>Updated: {formatDate(post.updatedAt)}</span>
                                 </div>
                               )}
                               <div className="flex items-center gap-1">
                                 <User className="h-3 w-3" />
-                                <span>By: {user.display_name || user.username}</span>
+                                <span>By: {post.author.name}</span>
                               </div>
                             </div>
                           </div>
@@ -333,14 +324,14 @@ export default function Dashboard() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => router.push(`/${locale}/dashboard/edit/${post.id}`)}
+                              onClick={() => router.push(`/${locale}/dashboard/edit/${post._id}`)}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleDeletePost(post.id)}
+                              onClick={() => handleDeletePost(post._id)}
                               className="text-red-600 hover:text-red-700"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -372,7 +363,7 @@ export default function Dashboard() {
                     </label>
                     <input
                       type="text"
-                      value={user.display_name || user.username}
+                      value={user.name}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                       disabled
                     />

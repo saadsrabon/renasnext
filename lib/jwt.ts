@@ -22,7 +22,7 @@ export function generateToken(user: IUser): string {
     JWT_SECRET,
     {
       expiresIn: JWT_EXPIRES_IN
-    }
+    } as jwt.SignOptions
   )
 }
 
