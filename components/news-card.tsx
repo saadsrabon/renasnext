@@ -5,6 +5,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import Link from "next/link"
+import TranslatableText from "./TranslatableText"
+import { LikeSaveButtons } from "./like-save-buttons"
 
 interface NewsCardProps {
   title: string
@@ -90,21 +92,28 @@ export function NewsCard({
                 {t("editorOfPress")} - {date}
               </p>
               <h2 className="text-2xl lg:text-3xl font-bold mb-4 leading-tight">
-                {title}
+                <TranslatableText text={title} />
               </h2>
               <p className="text-gray-200 text-sm lg:text-base leading-relaxed mb-4">
-                {content}
+                <TranslatableText text={content} />
               </p>
               {(slug || id) && (
-                <Link href={`/${locale}${slug ? `/news/${slug}` : `/posts/${id}`}`}>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-                  >
-                    Read More
-                  </Button>
-                </Link>
+                <div className="space-y-2">
+                  <Link href={`/${locale}${slug ? `/news/${slug}` : `/posts/${id}`}`}>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                    >
+                      Read More
+                    </Button>
+                  </Link>
+                  {id && (
+                    <div className="flex justify-start">
+                      <LikeSaveButtons postId={id} />
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -118,21 +127,24 @@ export function NewsCard({
               {t("editorOfPress")} - {date}
             </p>
             <h3 className="font-semibold text-renas-brown-800 dark:text-white text-sm lg:text-base line-clamp-2 mb-3">
-              {title}
+              <TranslatableText text={title} />
             </h3>
             <p className="text-sm text-renas-brown-600 dark:text-gray-300 line-clamp-2 mb-3">
-              {content}
+              <TranslatableText text={content} />
             </p>
             {(slug || id) && (
-              <Link href={`/${locale}${slug ? `/news/${slug}` : `/posts/${id}`}`}>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="w-full"
-                >
-                  Read More
-                </Button>
-              </Link>
+              <div className="space-y-2">
+                <Link href={`/${locale}${slug ? `/news/${slug}` : `/posts/${id}`}`}>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="w-full"
+                  >
+                    Read More
+                  </Button>
+                </Link>
+                {id && <LikeSaveButtons postId={id} />}
+              </div>
             )}
           </CardContent>
         </Card>

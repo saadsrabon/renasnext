@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ArrowLeft, Calendar, User, Tag } from "lucide-react"
 import Link from "next/link"
+import PostTranslation from "@/components/PostTranslation"
+import TranslatableText from "@/components/TranslatableText"
+import { LikeSaveButtons } from "@/components/like-save-buttons"
 
 interface Post {
   _id: string
@@ -44,11 +47,17 @@ export default function PostPage() {
         const response = await fetch(`/api/posts/${params.id}`)
         
         if (!response.ok) {
-          throw new Error('Post not found')
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Post not found')
         }
         
         const data = await response.json()
-        setPost(data)
+        
+        if (data.success && data.post) {
+          setPost(data.post)
+        } else {
+          throw new Error('Invalid response format')
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load post')
       } finally {
@@ -204,15 +213,15 @@ export default function PostPage() {
           {/* Post Content */}
           <Card className="border-renas-brown-200 dark:border-gray-700">
             <CardContent className="p-8">
-              <div 
-                className="prose prose-lg max-w-none dark:prose-invert
-                  prose-headings:text-renas-brown-800 dark:prose-headings:text-white
-                  prose-p:text-renas-brown-700 dark:prose-p:text-gray-300
-                  prose-a:text-renas-gold-600 dark:prose-a:text-renas-gold-400
-                  prose-strong:text-renas-brown-800 dark:prose-strong:text-white
-                  prose-blockquote:border-renas-gold-500 dark:prose-blockquote:border-renas-gold-400
-                  prose-blockquote:text-renas-brown-600 dark:prose-blockquote:text-gray-400"
-                dangerouslySetInnerHTML={{ __html: post.content }}
+              {/* Translation Component */}
+              <PostTranslation
+                postId={post._id}
+                originalTitle={post.title}
+                originalContent={post.content}
+                originalExcerpt={post.excerpt}
+                onTranslationComplete={(translation) => {
+                  console.log('Translation completed:', translation);
+                }}
               />
               
               {/* Additional Media */}
@@ -231,12 +240,15 @@ export default function PostPage() {
                 <p>Published by <span className="font-medium">{post.author.name}</span></p>
                 <p>Last updated: {new Date(post.updatedAt).toLocaleDateString()}</p>
               </div>
-              <Link href="/">
-                <Button variant="outline">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Home
-                </Button>
-              </Link>
+              <div className="flex items-center gap-4">
+                <LikeSaveButtons postId={post._id} />
+                <Link href="/">
+                  <Button variant="outline">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Home
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         </div>

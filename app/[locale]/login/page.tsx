@@ -12,6 +12,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { LanguageToggle } from "@/components/language-toggle"
 import { useAuth } from "@/lib/auth-context"
 import { Loader2 } from "lucide-react"
+import SocialLogin from "@/components/social-login"
 
 export default function LoginPage({ params }: { params: { locale: string } }) {
   const t = useTranslations("common")
@@ -134,6 +135,11 @@ export default function LoginPage({ params }: { params: { locale: string } }) {
                 t("login")
               )}
             </Button>
+
+            <SocialLogin 
+              onSuccess={() => router.push(`/${params.locale}`)}
+              onError={(error) => setError(error)}
+            />
 
             <div className="text-center">
               <span className="text-renas-brown-600 dark:text-renas-gold-300">

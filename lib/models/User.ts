@@ -5,10 +5,13 @@ export interface IUser extends Document {
   _id: string
   name: string
   email: string
-  password: string
+  password?: string
   role: 'admin' | 'author' | 'editor' | 'subscriber'
   avatar?: string
   isActive: boolean
+  provider?: string
+  providerId?: string
+  savedPosts: mongoose.Types.ObjectId[]
   createdAt: Date
   updatedAt: Date
   comparePassword(candidatePassword: string): Promise<boolean>
@@ -34,7 +37,9 @@ const UserSchema = new Schema<IUser>(
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
+      required: function() {
+        return !this.provider // Only required if not a social login user
+      },
       minlength: [8, 'Password must be at least 8 characters'],
       select: false
     },
@@ -50,7 +55,20 @@ const UserSchema = new Schema<IUser>(
     isActive: {
       type: Boolean,
       default: true
-    }
+    },
+    provider: {
+      type: String,
+      enum: ['google', 'facebook', 'credentials'],
+      default: 'credentials'
+    },
+    providerId: {
+      type: String,
+      sparse: true // Allows multiple null values
+    },
+    savedPosts: [{
+      type: Schema.Types.ObjectId,
+      ref: 'Post'
+    }]
   },
   {
     timestamps: true
@@ -60,9 +78,9 @@ const UserSchema = new Schema<IUser>(
 // Index for faster queries (email already has unique index from unique: true)
 UserSchema.index({ role: 1 })
 
-// Hash password before saving
+// Hash password before saving (only for non-social login users)
 UserSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next()
+  if (!this.isModified('password') || !this.password) return next()
   
   try {
     const salt = await bcrypt.genSalt(12)

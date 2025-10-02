@@ -11,6 +11,9 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['mongoose'],
   },
+  env: {
+    _next_intl_trailing_slash: 'false'
+  }
 };
 
 module.exports = withNextIntl(nextConfig);
