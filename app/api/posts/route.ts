@@ -3,6 +3,10 @@ import connectDB from '@/lib/mongodb'
 import Post from '@/lib/models/Post'
 import User from '@/lib/models/User'
 
+// Ensure models are registered
+import '@/lib/models/User'
+import '@/lib/models/Post'
+
 // GET - Fetch posts (public or user-specific)
 export async function GET(request: NextRequest) {
   try {
@@ -11,6 +15,7 @@ export async function GET(request: NextRequest) {
     const perPage = parseInt(searchParams.get('per_page') || '10')
     const category = searchParams.get('category')
     const search = searchParams.get('search')
+    const slug = searchParams.get('slug')
     const status = searchParams.get('status') || 'published'
     
     await connectDB()
@@ -22,7 +27,9 @@ export async function GET(request: NextRequest) {
       query.category = category
     }
     
-    if (search) {
+    if (slug) {
+      query.slug = slug
+    } else if (search) {
       query.$or = [
         { title: { $regex: search, $options: 'i' } },
         { content: { $regex: search, $options: 'i' } },

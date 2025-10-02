@@ -7,6 +7,8 @@ import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Loader2, ArrowLeft, Calendar, User, Share2, Bookmark, Eye } from "lucide-react"
+import PostTranslation from "@/components/PostTranslation"
+import TranslatableText from "@/components/TranslatableText"
 
 export default function NewsDetailPage({ params }: { params: { locale: string; slug: string } }) {
   const t = useTranslations("news")
@@ -22,18 +24,13 @@ export default function NewsDetailPage({ params }: { params: { locale: string; s
         setLoading(true)
         setError(null)
         
-        // First try to find by slug
-        const response = await fetch(`/api/posts?search=${params.slug}&per_page=1&status=published`)
+        // Try to find by slug using direct API call
+        const response = await fetch(`/api/posts?slug=${params.slug}&status=published`)
         
         if (response.ok) {
           const data = await response.json()
           if (data.posts && data.posts.length > 0) {
-            const foundPost = data.posts.find((p: any) => p.slug === params.slug)
-            if (foundPost) {
-              setPost(foundPost)
-            } else {
-              setError("Post not found")
-            }
+            setPost(data.posts[0])
           } else {
             setError("Post not found")
           }
@@ -191,58 +188,49 @@ export default function NewsDetailPage({ params }: { params: { locale: string; s
           <div className="max-w-4xl mx-auto">
             <Card className="border-renas-brown-200 dark:border-gray-700">
               <CardContent className="p-8">
-                <div className="prose prose-lg max-w-none dark:prose-invert
-                  prose-headings:text-renas-brown-800 dark:prose-headings:text-white
-                  prose-p:text-renas-brown-700 dark:prose-p:text-gray-300
-                  prose-a:text-renas-gold-600 dark:prose-a:text-renas-gold-400
-                  prose-strong:text-renas-brown-800 dark:prose-strong:text-white
-                  prose-blockquote:border-renas-gold-500 dark:prose-blockquote:border-renas-gold-400
-                  prose-blockquote:bg-renas-beige-100 dark:prose-blockquote:bg-gray-800
-                  prose-blockquote:text-renas-brown-700 dark:prose-blockquote:text-gray-300">
-                  
-                  {/* Excerpt */}
-                  {post.excerpt && (
-                    <div className="text-xl text-gray-600 dark:text-gray-400 mb-6 italic">
-                      {post.excerpt}
+                {/* Translation Component */}
+                <PostTranslation
+                  postId={post._id}
+                  originalTitle={post.title}
+                  originalContent={post.content}
+                  originalExcerpt={post.excerpt}
+                  onTranslationComplete={(translation) => {
+                    console.log('Translation completed:', translation);
+                  }}
+                />
+                
+                {/* Media Gallery */}
+                {post.media && post.media.length > 0 && (
+                  <div className="mt-8">
+                    <h3 className="text-lg font-semibold mb-4">Media</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {post.media.map((media: any, index: number) => (
+                        <div key={index} className="rounded-lg overflow-hidden">
+                          {media.type === 'image' ? (
+                            <img
+                              src={media.url}
+                              alt={media.title || `Image ${index + 1}`}
+                              className="w-full h-auto"
+                            />
+                          ) : (
+                            <video
+                              src={media.url}
+                              controls
+                              className="w-full h-auto"
+                            >
+                              Your browser does not support the video tag.
+                            </video>
+                          )}
+                          {media.title && (
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                              <TranslatableText text={media.title} />
+                            </p>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                  )}
-                  
-                  {/* Content */}
-                  <div dangerouslySetInnerHTML={{ __html: post.content }} />
-                  
-                  {/* Media Gallery */}
-                  {post.media && post.media.length > 0 && (
-                    <div className="mt-8">
-                      <h3 className="text-lg font-semibold mb-4">Media</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {post.media.map((media: any, index: number) => (
-                          <div key={index} className="rounded-lg overflow-hidden">
-                            {media.type === 'image' ? (
-                              <img
-                                src={media.url}
-                                alt={media.title || `Image ${index + 1}`}
-                                className="w-full h-auto"
-                              />
-                            ) : (
-                              <video
-                                src={media.url}
-                                controls
-                                className="w-full h-auto"
-                              >
-                                Your browser does not support the video tag.
-                              </video>
-                            )}
-                            {media.title && (
-                              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                                {media.title}
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

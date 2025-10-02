@@ -22,7 +22,8 @@
     "bookmark": "Bookmark",
     "viewOriginal": "View Original",
     "loggingIn": "Logging in...",
-    "creatingAccount": "Creating account..."
+    "creatingAccount": "Creating account...",
+    "orContinueWith": "Or continue with"
   },
   "navigation": {
     "mainNews": "Main News",
@@ -55,7 +56,7 @@
     "dailyNewsDescription": "Stay updated with the latest daily news and current events",
     "charityDescription": "Stories of hope, compassion, and charitable initiatives making a difference",
     "sportsDescription": "All the latest sports news, scores, and updates from around the world",
-    "womanDescriptionNews and stories focused on women's issues": ", achievements, and perspectives",
+    "womanDescription": "News and stories focused on women's issues, achievements, and perspectives",
     "politicalNewsDescription": "In-depth political analysis and government news coverage",
     "charityNews": "Charity News",
     "sportsNews": "Sports News",

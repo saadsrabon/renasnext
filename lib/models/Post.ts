@@ -20,6 +20,16 @@ export interface IPost extends Document {
   views: number
   likes: number
   publishedAt?: Date
+  // Translation fields
+  originalLanguage: string
+  translations?: {
+    [languageCode: string]: {
+      title: string
+      content: string
+      excerpt?: string
+      translatedAt: Date
+    }
+  }
   createdAt: Date
   updatedAt: Date
 }
@@ -93,6 +103,25 @@ const PostSchema = new Schema<IPost>(
     publishedAt: {
       type: Date,
       default: null
+    },
+    // Translation fields
+    originalLanguage: {
+      type: String,
+      default: 'en',
+      enum: ['en', 'ar']
+    },
+    translations: {
+      type: Map,
+      of: {
+        title: String,
+        content: String,
+        excerpt: String,
+        translatedAt: {
+          type: Date,
+          default: Date.now
+        }
+      },
+      default: {}
     }
   },
   {
