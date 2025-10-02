@@ -3,6 +3,7 @@ import connectDB from '@/lib/mongodb'
 import User from '@/lib/models/User'
 import Post from '@/lib/models/Post'
 import { authenticateUser } from '@/lib/auth-middleware'
+import mongoose from 'mongoose'
 
 // GET - Fetch user's saved posts
 export async function GET(request: NextRequest) {
@@ -104,7 +105,7 @@ export async function POST(request: NextRequest) {
       }
     } else if (action === 'unsave') {
       // Remove post from saved posts
-      user.savedPosts = user.savedPosts.filter(id => id.toString() !== postId)
+      user.savedPosts = user.savedPosts.filter((id: mongoose.Types.ObjectId) => id.toString() !== postId)
       await user.save()
     }
 
