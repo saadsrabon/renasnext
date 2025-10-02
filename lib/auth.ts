@@ -49,7 +49,17 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id
-        token.role = user.role
+        
+        // Fetch user from database to get role
+        try {
+          await connectDB()
+          const dbUser = await User.findOne({ email: user.email })
+          if (dbUser) {
+            token.role = dbUser.role
+          }
+        } catch (error) {
+          console.error('Error fetching user role:', error)
+        }
       }
       return token
     },
