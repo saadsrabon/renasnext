@@ -24,15 +24,15 @@ export function Header({ locale }: HeaderProps) {
 
   const navigationItems = [
     { key: "mainNews", href: "/" },
-    { key: "economicNews", href: "/economic" },
+    // { key: "economicNews", href: "/economic" },
     { key: "woman", href: "/woman" },
     { key: "sports", href: "/sports" },
     { key: "charity", href: "/charity" },
     { key: "dailyNews", href: "/daily-news" },
     { key: "politicalNews", href: "/political-news" },
-    { key: "expatriates", href: "/expatriates" },
+    // { key: "expatriates", href: "/expatriates" },
     { key: "forums", href: "/forums" },
-    { key: "saved", href: "/saved" },
+  
   ]
 
   return (
