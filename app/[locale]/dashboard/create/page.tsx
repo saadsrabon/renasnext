@@ -48,7 +48,9 @@ export default function CreatePost() {
   const [content, setContent] = useState("")
   const [category, setCategory] = useState("")
   const [tags, setTags] = useState("")
-  const [status, setStatus] = useState<"draft" | "publish" | "pending">("draft")
+  const [status, setStatus] = useState<"draft" | "published" | "pending">(
+    user?.role === 'author' ? "pending" : "draft"
+  )
   
   // Media state
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([])
@@ -266,10 +268,10 @@ export default function CreatePost() {
       return
     }
 
-    if (!featuredImage) {
-      alert("Please upload a featured image")
-      return
-    }
+    // if (!featuredImage) {
+    //   alert("Please upload a featured image")
+    //   return
+    // }
 
     if (uploadingMedia || uploadingFeaturedImage) {
       alert("Please wait for uploads to complete")
@@ -304,7 +306,7 @@ export default function CreatePost() {
       if (response.ok) {
         const data = await response.json()
         if (data.success && data.post) {
-          router.push(`/${locale}/dashboard/edit/${data.post.id}`)
+          router.push(`/${locale}/dashboard`)
         } else {
           alert(data.error || "Failed to create post")
         }
@@ -333,7 +335,7 @@ export default function CreatePost() {
       alert("Please wait until media uploads finish before publishing.")
       return
     }
-    setStatus("publish")
+    setStatus("published")
     const form = document.querySelector('form')
     if (form) {
       form.requestSubmit()
@@ -373,7 +375,8 @@ export default function CreatePost() {
             </Button>
             <Button
               onClick={handlePublish}
-              disabled={saving || uploadingMedia || uploadingFeaturedImage || !title.trim() || !content.trim() || !featuredImage}
+              disabled={saving || uploadingMedia || uploadingFeaturedImage || !title.trim() || !content.trim() }
+              // || !featuredImage
             >
               <Eye className="h-4 w-4 mr-2" />
               Publish
@@ -557,10 +560,17 @@ export default function CreatePost() {
                       value={status}
                       onChange={(e) => setStatus(e.target.value as any)}
                       className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                      disabled={user?.role === 'author'}
                     >
-                      <option value="draft">Draft</option>
-                      <option value="pending">Pending Review</option>
-                      <option value="publish">Published</option>
+                      {user?.role === 'author' ? (
+                        <option value="pending">Pending Review (Author posts require admin approval)</option>
+                      ) : (
+                        <>
+                          <option value="draft">Draft</option>
+                          <option value="pending">Pending Review</option>
+                          <option value="published">Published</option>
+                        </>
+                      )}
                     </select>
                   </div>
                 </div>

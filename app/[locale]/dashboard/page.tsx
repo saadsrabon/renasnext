@@ -21,7 +21,8 @@ import {
   Settings,
   Heart,
   Bookmark,
-  Search
+  Search,
+  ArrowLeft
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter, useParams } from "next/navigation"
@@ -87,6 +88,8 @@ export default function Dashboard() {
   const [userSearch, setUserSearch] = useState("")
   const [postSearch, setPostSearch] = useState("")
   const [userRoleFilter, setUserRoleFilter] = useState("all")
+  const [selectedPosts, setSelectedPosts] = useState<string[]>([])
+  const [bulkPublishing, setBulkPublishing] = useState(false)
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -159,7 +162,7 @@ export default function Dashboard() {
     if (!token) return
     
     try {
-      const response = await fetch("/api/posts", {
+      const response = await fetch("/api/posts?status=all", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -210,9 +213,108 @@ export default function Dashboard() {
 
       if (response.ok) {
         setPosts(posts.filter(post => post._id !== postId))
+        setAllPosts(allPosts.filter(post => post._id !== postId))
       }
     } catch (error) {
       console.error("Error deleting post:", error)
+    }
+  }
+
+  const handleSelectPost = (postId: string) => {
+    setSelectedPosts(prev => 
+      prev.includes(postId) 
+        ? prev.filter(id => id !== postId)
+        : [...prev, postId]
+    )
+  }
+
+  const handleSelectAllPosts = () => {
+    const filteredPosts = allPosts.filter(post => 
+      postSearch === '' || 
+      post.title.toLowerCase().includes(postSearch.toLowerCase()) ||
+      post.author.name.toLowerCase().includes(postSearch.toLowerCase())
+    )
+    
+    if (selectedPosts.length === filteredPosts.length) {
+      setSelectedPosts([])
+    } else {
+      setSelectedPosts(filteredPosts.map(post => post._id))
+    }
+  }
+
+  const handleBulkPublish = async () => {
+    if (selectedPosts.length === 0) {
+      alert("Please select at least one post to publish")
+      return
+    }
+
+    if (!confirm(`Are you sure you want to publish ${selectedPosts.length} post(s)?`)) return
+
+    setBulkPublishing(true)
+    try {
+      const response = await fetch('/api/posts/bulk-publish', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ postIds: selectedPosts }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          // Update the posts in state
+          setAllPosts(prev => prev.map(post => 
+            selectedPosts.includes(post._id) 
+              ? { ...post, status: 'published' as const }
+              : post
+          ))
+          setSelectedPosts([])
+          alert(`Successfully published ${data.publishedCount} post(s)`)
+        } else {
+          alert(data.error || "Failed to publish posts")
+        }
+      } else {
+        const error = await response.json()
+        alert(error.error || "Failed to publish posts")
+      }
+    } catch (error) {
+      console.error("Error bulk publishing posts:", error)
+      alert("Failed to publish posts. Please try again.")
+    } finally {
+      setBulkPublishing(false)
+    }
+  }
+
+  const handleQuickPublishPost = async (postId: string) => {
+    if (!confirm("Are you sure you want to publish this post?")) return
+
+    try {
+      const response = await fetch(`/api/posts/${postId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: "published" }),
+      })
+
+      if (response.ok) {
+        // Update the post in state
+        setAllPosts(prev => prev.map(post => 
+          post._id === postId 
+            ? { ...post, status: 'published' as const }
+            : post
+        ))
+        alert("Post published successfully")
+      } else {
+        const error = await response.json()
+        alert(error.error || "Failed to publish post")
+      }
+    } catch (error) {
+      console.error("Error publishing post:", error)
+      alert("Failed to publish post. Please try again.")
     }
   }
 
@@ -281,6 +383,12 @@ export default function Dashboard() {
             <p className="text-gray-600 dark:text-gray-400 mt-2">
               Welcome back, {user.name}!
             </p>
+        <Link href={`/${locale}/`}>
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Visit Site
+              </Button>
+            </Link>
           </div>
           <Link href={`/${locale}/dashboard/create`}>
             <Button className="flex items-center gap-2">
@@ -532,6 +640,25 @@ export default function Dashboard() {
                         All Posts
                       </h2>
                       <div className="flex items-center gap-2">
+                        {selectedPosts.length > 0 && (
+                          <Button
+                            onClick={handleBulkPublish}
+                            disabled={bulkPublishing}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            {bulkPublishing ? (
+                              <>
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                Publishing...
+                              </>
+                            ) : (
+                              <>
+                                <Eye className="h-4 w-4 mr-2" />
+                                Publish Selected ({selectedPosts.length})
+                              </>
+                            )}
+                          </Button>
+                        )}
                         <div className="relative">
                           <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                           <input
@@ -554,6 +681,27 @@ export default function Dashboard() {
                       </div>
                     ) : (
                       <div className="space-y-4">
+                        {allPosts.length > 0 && (
+                          <div className="flex items-center gap-2 mb-4">
+                            <input
+                              type="checkbox"
+                              checked={selectedPosts.length === allPosts.filter(post => 
+                                postSearch === '' || 
+                                post.title.toLowerCase().includes(postSearch.toLowerCase()) ||
+                                post.author.name.toLowerCase().includes(postSearch.toLowerCase())
+                              ).length && selectedPosts.length > 0}
+                              onChange={handleSelectAllPosts}
+                              className="rounded border-gray-300 dark:border-gray-600"
+                            />
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              Select All ({allPosts.filter(post => 
+                                postSearch === '' || 
+                                post.title.toLowerCase().includes(postSearch.toLowerCase()) ||
+                                post.author.name.toLowerCase().includes(postSearch.toLowerCase())
+                              ).length} posts)
+                            </span>
+                          </div>
+                        )}
                         {allPosts
                           .filter(post => 
                             postSearch === '' || 
@@ -566,30 +714,49 @@ export default function Dashboard() {
                             className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                           >
                             <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-3 mb-2">
-                                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                                    {post.title || "Untitled Post"}
-                                  </h3>
-                                  <span className={getStatusBadge(post.status)}>
-                                    {post.status}
-                                  </span>
-                                </div>
-                                <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-                                  {post.excerpt ? post.excerpt.replace(/<[^>]*>/g, '') : "No excerpt available"}
-                                </p>
-                                <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    <span>Created: {formatDate(post.createdAt)}</span>
+                              <div className="flex items-start gap-3 flex-1">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedPosts.includes(post._id)}
+                                  onChange={() => handleSelectPost(post._id)}
+                                  className="mt-1 rounded border-gray-300 dark:border-gray-600"
+                                />
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+                                      {post.title || "Untitled Post"}
+                                    </h3>
+                                    <span className={getStatusBadge(post.status)}>
+                                      {post.status}
+                                    </span>
                                   </div>
-                                  <div className="flex items-center gap-1">
-                                    <User className="h-3 w-3" />
-                                    <span>By: {post.author.name}</span>
+                                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
+                                    {post.excerpt ? post.excerpt.replace(/<[^>]*>/g, '') : "No excerpt available"}
+                                  </p>
+                                  <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                                    <div className="flex items-center gap-1">
+                                      <Calendar className="h-3 w-3" />
+                                      <span>Created: {formatDate(post.createdAt)}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <User className="h-3 w-3" />
+                                      <span>By: {post.author.name}</span>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
                               <div className="flex items-center gap-2 ml-4">
+                                {post.status === 'pending' && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleQuickPublishPost(post._id)}
+                                    className="text-green-600 hover:text-green-700"
+                                    title="Quick Publish"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                )}
                                 <Button
                                   variant="ghost"
                                   size="sm"

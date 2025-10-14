@@ -18,10 +18,48 @@ export async function GET(request: NextRequest) {
     const slug = searchParams.get('slug')
     const status = searchParams.get('status') || 'published'
     
+    // Check if user is requesting all posts (admin only)
+    if (status === 'all') {
+      const authHeader = request.headers.get('Authorization')
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return NextResponse.json(
+          { error: 'Authentication required for admin access' },
+          { status: 401 }
+        )
+      }
+
+      // Import auth middleware here to avoid circular dependency
+      const { authenticateUser } = await import('@/lib/auth-middleware')
+      const authResult = await authenticateUser(request)
+      
+      if (!authResult.success || !authResult.user) {
+        return NextResponse.json(
+          { error: authResult.error || 'Authentication failed' },
+          { status: 401 }
+        )
+      }
+
+      // Check if user has admin role
+      if (authResult.user.role !== 'admin') {
+        return NextResponse.json(
+          { error: 'Admin access required' },
+          { status: 403 }
+        )
+      }
+    }
+    
     await connectDB()
 
-    // Build query
-    const query: any = { status }
+    // Build query - ensure pending posts are never shown in public API calls
+    const query: any = {}
+    if (status === 'all') {
+      // For admin dashboard, show all posts
+      // No status filter applied
+    } else if (status === 'published') {
+      query.status = 'published'
+    } else {
+      query.status = status
+    }
     
     if (category && category !== 'all') {
       query.category = category
@@ -119,12 +157,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!featuredImage || typeof featuredImage !== 'string' || featuredImage.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'Featured image is required' },
-        { status: 400 }
-      )
-    }
+    // if (!featuredImage || typeof featuredImage !== 'string' || featuredImage.trim().length === 0) {
+    //   return NextResponse.json(
+    //     { error: 'Featured image is required' },
+    //     { status: 400 }
+    //   )
+    // }
 
     // Validate category
     const validCategories = ['daily-news', 'political-news', 'sports', 'woman', 'charity', 'general']

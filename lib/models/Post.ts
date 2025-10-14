@@ -6,11 +6,11 @@ export interface IPost extends Document {
   content: string
   excerpt?: string
   slug: string
-  status: 'draft' | 'published' | 'archived'
+  status: 'draft' | 'published' | 'archived' | 'pending'
   author: mongoose.Types.ObjectId
   category: string
   tags: string[]
-  featuredImage?: string
+  // featuredImage?: string
   media: {
     type: 'image' | 'video'
     url: string
@@ -58,7 +58,7 @@ const PostSchema = new Schema<IPost>(
     },
     status: {
       type: String,
-      enum: ['draft', 'published', 'archived'],
+      enum: ['draft', 'published', 'archived', 'pending'],
       default: 'draft'
     },
     author: {
@@ -75,10 +75,10 @@ const PostSchema = new Schema<IPost>(
       type: String,
       trim: true
     }],
-    featuredImage: {
-      type: String,
-      required: [true, 'Featured image is required']
-    },
+    // featuredImage: {
+    //   type: String,
+    //   required: [false, 'Featured image is required']
+    // },
     media: [{
       type: {
         type: String,

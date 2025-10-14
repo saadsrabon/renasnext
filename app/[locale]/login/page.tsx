@@ -7,6 +7,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PasswordInput } from "@/components/ui/password-input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { LanguageToggle } from "@/components/language-toggle"
@@ -102,12 +103,11 @@ export default function LoginPage({ params }: { params: { locale: string } }) {
               >
                 {t("password")}
               </Label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 placeholder={t("enterPassword")}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={setPassword}
                 className="renas-input bg-renas-beige-200 dark:bg-gray-700 border-renas-brown-600 dark:border-renas-gold-400 text-renas-brown-800 dark:text-white placeholder:text-renas-brown-600 dark:placeholder:text-renas-gold-300"
                 required
               />

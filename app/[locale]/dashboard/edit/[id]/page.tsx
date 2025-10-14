@@ -64,7 +64,9 @@ export default function EditPost() {
   const [content, setContent] = useState("")
   const [category, setCategory] = useState("")
   const [tags, setTags] = useState("")
-  const [status, setStatus] = useState<"draft" | "publish" | "pending">("draft")
+  const [status, setStatus] = useState<"draft" | "published" | "pending">(
+    user?.role === 'author' ? "pending" : "draft"
+  )
   
   // Media state
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([])
@@ -100,7 +102,8 @@ export default function EditPost() {
           setTitle(postData.title || "")
           setContent(postData.content || "")
           setExcerpt(postData.excerpt || "")
-          setStatus(postData.status || "draft")
+          // For authors, always set status to pending; for others, use the post's actual status
+          setStatus(user?.role === 'author' ? "pending" : (postData.status || "draft"))
           setCategory(postData.category || "")
           setTags(postData.tags?.join(', ') || "")
           
@@ -291,6 +294,54 @@ export default function EditPost() {
     }
   }
 
+  const handleQuickPublish = async () => {
+    if (!title.trim() || !content.trim()) {
+      alert("Please fill in the title and content")
+      return
+    }
+
+    setSaving(true)
+    try {
+      const response = await fetch(`/api/posts/${postId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title,
+          content,
+          excerpt,
+          status: "published",
+          category,
+          tags: tags.split(',').map(tag => tag.trim()).filter(Boolean),
+          media: mediaFiles.map(m => ({
+            id: m.id,
+            type: m.type,
+            url: m.url || m.preview
+          }))
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          router.push(`/${locale}/dashboard`)
+        } else {
+          alert(data.error || "Failed to publish post")
+        }
+      } else {
+        const error = await response.json()
+        alert(error.error || error.message || "Failed to publish post")
+      }
+    } catch (error) {
+      console.error("Error publishing post:", error)
+      alert("Failed to publish post. Please try again.")
+    } finally {
+      setSaving(false)
+    }
+  }
+
   if (!user) {
     return null
   }
@@ -352,6 +403,16 @@ export default function EditPost() {
               <Save className="h-4 w-4 mr-2" />
               Save Draft
             </Button>
+            {user?.role === 'admin' && post?.status === 'pending' && (
+              <Button
+                onClick={handleQuickPublish}
+                disabled={saving || !title.trim() || !content.trim()}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Quick Publish
+              </Button>
+            )}
             <Button
               onClick={handlePublish}
               disabled={saving || !title.trim() || !content.trim()}
@@ -512,10 +573,17 @@ export default function EditPost() {
                       value={status}
                       onChange={(e) => setStatus(e.target.value as any)}
                       className="mt-1 w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-900 text-gray-900 dark:text-white"
+                      disabled={user?.role === 'author'}
                     >
-                      <option value="draft">Draft</option>
-                      <option value="pending">Pending Review</option>
-                      <option value="publish">Published</option>
+                      {user?.role === 'author' ? (
+                        <option value="pending">Pending Review (Author posts require admin approval)</option>
+                      ) : (
+                        <>
+                          <option value="draft">Draft</option>
+                          <option value="pending">Pending Review</option>
+                          <option value="published">Published</option>
+                        </>
+                      )}
                     </select>
                   </div>
                 </div>

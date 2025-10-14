@@ -7,6 +7,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { PasswordInput } from "@/components/ui/password-input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { LanguageToggle } from "@/components/language-toggle"
@@ -128,12 +129,11 @@ export default function SignupPage({ params }: { params: { locale: string } }) {
               >
                 {t("password")}
               </Label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 placeholder={t("enterPassword")}
                 value={formData.password}
-                onChange={(e) => handleInputChange("password", e.target.value)}
+                onChange={(value) => handleInputChange("password", value)}
                 className="renas-input bg-renas-beige-200 dark:bg-gray-700 border-renas-brown-600 dark:border-renas-gold-400 text-renas-brown-800 dark:text-white placeholder:text-renas-brown-600 dark:placeholder:text-renas-gold-300"
                 required
               />
@@ -146,12 +146,11 @@ export default function SignupPage({ params }: { params: { locale: string } }) {
               >
                 {t("confirmPassword")}
               </Label>
-              <Input
+              <PasswordInput
                 id="confirmPassword"
-                type="password"
                 placeholder={t("enterConfirmPassword")}
                 value={formData.confirmPassword}
-                onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                onChange={(value) => handleInputChange("confirmPassword", value)}
                 className="renas-input bg-renas-beige-200 dark:bg-gray-700 border-renas-brown-600 dark:border-renas-gold-400 text-renas-brown-800 dark:text-white placeholder:text-renas-brown-600 dark:placeholder:text-renas-gold-300"
                 required
               />
