@@ -287,7 +287,7 @@ export default function EditPost() {
   }
 
   const handlePublish = async () => {
-    setStatus("publish")
+    setStatus("published")
     const form = document.querySelector('form')
     if (form) {
       form.requestSubmit()
